@@ -1,6 +1,12 @@
+name: Run Security Testing
+
+on:
+  push:
+    branches:
+      - security-testing 
+
 jobs:
   security-testing:
-    name: Run Security Testing
     runs-on: ubuntu-latest
 
     steps:
