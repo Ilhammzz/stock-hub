@@ -3,7 +3,10 @@ name: Run Security Testing
 on:
   push:
     branches:
-      - security-testing 
+      - security-testing
+  pull_request:
+    branches:
+      - security-testing
 
 jobs:
   security-testing:
@@ -14,28 +17,36 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # 2. Setup PHP environment (PHP 8.2)
+      # 2. Setup PHP environment (PHP 8.1.29)
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1.29'  
+          php-version: '8.1.29'
           extensions: mbstring, bcmath, pdo_mysql, zip
           ini-values: post_max_size=256M, upload_max_filesize=256M
 
-      # 3. Install Composer dependencies
+      # 3. Setup Environment
+      - name: Setup Environment
+        run: cp .env.example .env || echo "No .env.example file found."
+
+      # 4. Install Composer dependencies
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
 
-      # 4. Run OWASP ZAP for security scanning
+      # 5. Run Database Migrations (Optional)
+      - name: Run Database Migrations
+        run: php artisan migrate --force || echo "No database migrations needed."
+
+      # 6. Run OWASP ZAP for security scanning
       - name: Run OWASP ZAP Security Scan
         uses: zaproxy/action-full-scan@v0.6.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          target: 'https://217.15.160.69'  
+          target: 'https://217.15.160.69'
         env:
           JAVA_OPTS: '-Xmx512m'
 
-      # 5. Run Static Application Security Testing (SAST) with CodeQL
+      # 7. Run Static Application Security Testing (SAST) with CodeQL
       - name: Run Static Analysis with CodeQL
         uses: github/codeql-action/init@v2
         with:
@@ -44,18 +55,19 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
 
-      # 6. Run tests with Pest
+      # 8. Run Tests with Pest
       - name: Run Tests with Pest
         run: ./vendor/bin/pest || echo "Pest tests failed"
 
-      # Debug PHP version
+      # 9. Debugging Steps
+      - name: Check PHP Info
+        run: php -i
+
       - name: Check Pest Version
         run: ./vendor/bin/pest --version
 
-      # Debug Composer
       - name: Check Composer Version
         run: composer --version
 
-      # Debug installed dependencies
       - name: List Installed Composer Packages
         run: composer show
