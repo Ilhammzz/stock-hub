@@ -19,13 +19,13 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
     && php -r "unlink('composer-setup.php');"
 
 # Set working directory
-WORKDIR /var/www/html/stock-hub
+WORKDIR /var/www/html
 
 # Copy project files
 COPY . .
 
 # Set permissions
-RUN chmod -R 775 /var/www/html/stock-hub/storage /var/www/html/bootstrap/cache \
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
     && chown -R www-data:www-data /var/www/html
 
 # Install Laravel dependencies
