@@ -131,47 +131,61 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout Repository
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    # Checkout Repository
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      # Extract SSH Key
-      - name: Extract SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          tar -xvf key.tar.gz -C ~/.ssh
-          chmod 600 ~/.ssh/id_rsa
-          echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+    # Extract SSH Key
+    - name: Extract SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        tar -xvf key.tar.gz -C ~/.ssh
+        chmod 600 ~/.ssh/id_rsa
+        echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
 
-      # Install Dependencies
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y rsync
+    # Install Docker and Docker Compose
+    - name: Install Docker and Docker Compose
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y docker.io docker-compose
+        sudo systemctl start docker
+        sudo systemctl enable docker
 
-      # Deploy Code to VPS
-      - name: Deploy to VPS
-        env:
-          DEPLOY_PATH: /pso/stock-hub
-        run: |
-          rsync -avz --exclude '.git' --exclude 'key.tar.gz' ./ root@217.15.160.69:${{ env.DEPLOY_PATH }}
-          ssh root@217.15.160.69 "
-            cd ${{ env.DEPLOY_PATH }} &&
-            composer install &&
-            php artisan migrate --force || echo 'Migration failed!'
-          "
+    # Copy Files to VPS
+    - name: Copy Files to VPS
+      run: |
+        rsync -avz --exclude '.git' --exclude 'key.tar.gz' ./ root@217.15.160.69:/pso/stock-hub
 
-      - name: Debug Nginx
-        run: |
-            ssh root@217.15.160.69 "
-              systemctl status nginx.service;
-              nginx -t || echo 'Nginx configuration is invalid!';
-            "
-  
-      # Reload or Restart Nginx
-      - name: Reload or Restart Nginx
-        run: |
-            ssh root@217.15.160.69 "
-              systemctl reload nginx || systemctl restart nginx;
-            "
+    # Build and Run Docker Compose on VPS
+    - name: Run Docker Compose
+      run: |
+        ssh root@217.15.160.69 "
+          cd /pso/stock-hub &&
+          docker-compose down || true &&
+          docker-compose --build up -d
+        "
+
+    # Debug Docker Compose
+    - name: Debug Docker Compose Services
+      run: |
+        ssh root@217.15.160.69 "
+          cd /pso/stock-hub &&
+          docker-compose ps
+        "
+
+    # Debug Nginx
+    - name: Debug Nginx
+      run: |
+        ssh root@217.15.160.69 "
+          systemctl status nginx.service;
+          nginx -t || echo 'Nginx configuration is invalid!';
+        "
+
+    # Reload or Restart Nginx
+    - name: Reload or Restart Nginx
+      run: |
+        ssh root@217.15.160.69 "
+          systemctl reload nginx || systemctl restart nginx;
+        "
+
 
