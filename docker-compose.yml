@@ -12,7 +12,7 @@ services:
     networks:
       - stockhub-network
     ports:
-      - "8081:80"
+      - "8081:8081"
 
   app:
     build:
@@ -65,5 +65,3 @@ volumes:
 
 networks:
   stockhub-network:
-    name : stockhub-network
-    driver: bridge
