@@ -156,12 +156,15 @@ jobs:
       run: |
         rsync -avz --exclude '.git' --exclude 'key.tar.gz' ./ root@217.15.160.69:${{ env.DEPLOY_PATH }}
 
-    # Copy .env file to VPS
-    - name: Copy .env File
+    # Copy and Generate .env from .env.example
+    - name: Copy .env.example to .env on VPS
       env:
         DEPLOY_PATH: /pso/stock-hub
       run: |
-        scp .env root@217.15.160.69:${{ env.DEPLOY_PATH }}/.env
+        ssh root@217.15.160.69 "
+        cd ${DEPLOY_PATH} &&
+        cp .env.example .env
+        "
 
     # Build and Run Docker Compose on VPS
     - name: Run Docker Compose
