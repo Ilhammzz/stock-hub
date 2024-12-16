@@ -55,7 +55,7 @@ Stock Hub is a Dockerized Laravel application designed to provide a seamless env
    ```
 
 6. **Access the Application**
-   - Laravel App: [http://localhost](http://localhost)
+   - Laravel App: [http://localhost](http://localhost:8081)
    - phpMyAdmin: [http://localhost:8080](http://localhost:8080)
 
 ---
