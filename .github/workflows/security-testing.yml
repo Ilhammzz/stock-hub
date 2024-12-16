@@ -47,10 +47,10 @@ jobs:
           JAVA_OPTS: '-Xmx512m'
 
       # 7. Run Static Application Security Testing (SAST) with CodeQL
-      - name: Run Static Analysis with CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: 'php'
+      #- name: Run Static Analysis with CodeQL
+      #  uses: github/codeql-action/init@v2
+      #  with:
+      #    languages: 'php'
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
