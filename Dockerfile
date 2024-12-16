@@ -33,13 +33,16 @@ COPY .env.example .env
 
 # Install Laravel dependencies
 ENV COMPOSER_MEMORY_LIMIT=-1
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader || composer install
 
 # Generate application key
 RUN php artisan key:generate
 
-# Expose port 80
+# Expose port 
 EXPOSE 80
+EXPOSE 9000
+EXPOSE 8081
+EXPOSE 8000
 
 # Start PHP-FPM
 CMD ["php-fpm"]
