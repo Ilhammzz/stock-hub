@@ -42,7 +42,7 @@ jobs:
         uses: zaproxy/action-full-scan@v0.6.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          target: 'https://217.15.160.69'
+          target: 'https://217.15.160.69:8081'
         env:
           JAVA_OPTS: '-Xmx512m'
 
