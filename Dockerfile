@@ -30,7 +30,7 @@ RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
 
 # Install Laravel dependencies
 ENV COMPOSER_MEMORY_LIMIT=-1
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-req=ext-zip
 
 # Generate application key
 RUN php artisan key:generate
