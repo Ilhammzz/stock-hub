@@ -171,7 +171,6 @@ jobs:
       run: |
         ssh root@217.15.160.69 "
           cd /pso/stock-hub &&
-          docker-compose down || true &&
           docker-compose --build up -d
         "
 
