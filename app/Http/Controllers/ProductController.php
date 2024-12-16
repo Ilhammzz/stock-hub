@@ -44,7 +44,7 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required',
             'quantity' => 'required|integer',
-            'price' => 'required|numeric|min:0|max:9999999999', // Batas maksimum
+            'price' => 'required|integer', 
         ]);
 
         $product->update($request->all());
