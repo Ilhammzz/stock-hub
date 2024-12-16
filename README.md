@@ -1,5 +1,5 @@
 
-# Stock Hub: DevOps Implementations
+# Stock Hub
 
 [![License](https://img.shields.io/github/license/irsyadkimi/stock-hub)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Compatible-blue)](https://www.docker.com/)
