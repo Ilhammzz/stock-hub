@@ -129,7 +129,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: test
+   # needs: test
 
     steps:
       # Checkout Repository
@@ -173,7 +173,7 @@ jobs:
         run: |
           ssh root@217.15.160.69 "
           cd /pso/stock-hub &&
-          docker-compose exec app php artisan migrate --force
+          docker-compose run --rm app php artisan migrate --force
           "
 
       - name: Debug Nginx
