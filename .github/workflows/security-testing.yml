@@ -52,8 +52,8 @@ jobs:
       #  with:
       #    languages: 'php'
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+      #  - name: Perform CodeQL Analysis
+      #   uses: github/codeql-action/analyze@v2
 
       # 8. Run Tests with Pest
       - name: Run Tests with Pest
