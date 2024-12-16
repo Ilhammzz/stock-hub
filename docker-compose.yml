@@ -5,8 +5,8 @@ services:
     image: nginx:alpine
     container_name: stockhub_nginx
     volumes:
+      - /var/www/html/stock-hub/public:/var/www/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./public:/var/www/html
     depends_on:
       - app
     networks:
@@ -23,13 +23,13 @@ services:
       - .env
     working_dir: /var/www/html
     volumes:
-      - .:/var/www/html
+      - /var/www/html/stock-hub:/var/www/html
+    networks:
+      - stockhub-network
     ports:
       - "9000:9000"
     depends_on:
       - db
-    networks:
-      - stockhub-network
 
   db:
     image: mysql:5.7
@@ -65,5 +65,5 @@ volumes:
 
 networks:
   stockhub-network:
-    name : stockhub-network
+    name: stockhub-network
     driver: bridge
