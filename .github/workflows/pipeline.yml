@@ -4,39 +4,188 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_DATABASE: stockhub
+          MYSQL_USER: stockhubuser
+          MYSQL_PASSWORD: stockhubpassword
+          MYSQL_ROOT_PASSWORD: rootpassword
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install PHP Extensions
+        run: sudo apt-get install -y php-mysql
+
+      - name: Wait for MySQL to be Ready
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 --silent; then
+              echo "MySQL is ready."
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      - name: Configure Testing Environment
+        run: |
+          cp .env.example .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=stockhub/' .env
+          sed -i 's/DB_USERNAME=.*/DB_USERNAME=stockhubuser/' .env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=stockhubpassword/' .env
+          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+
+      - name: Debug MySQL Connection
+        run: |
+          mysql -h 127.0.0.1 -u stockhubuser -pstockhubpassword -e "SHOW DATABASES;"
+
+      - name: Install Dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Generate APP_KEY
+        run: php artisan key:generate
+
+      - name: Run Database Migrations and Seed
+        run: |
+          php artisan migrate --force
+          php artisan db:seed
+
+      - name: Remove Existing Chrome Versions
+        run: sudo apt-get remove -y google-chrome-stable || true
+
+      - name: Install Google Chrome 114
+        run: |
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O google-chrome-stable_114.deb
+          sudo dpkg -i google-chrome-stable_114.deb || sudo apt-get -f install -y
+          google-chrome --version
+
+      - name: Debug Google Chrome Version
+        run: google-chrome --version
+
+      - name: Install Laravel Dusk ChromeDriver
+        run: php artisan dusk:chrome-driver
+
+      - name: Download Chromedriver for Chrome 131
+        run: |
+          curl -s -o chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.87/linux64/chromedriver-linux64.zip
+          unzip -o chromedriver.zip 
+          mv chromedriver-linux64/chromedriver ./vendor/laravel/dusk/bin/chromedriver-linux
+          chmod +x ./vendor/laravel/dusk/bin/chromedriver-linux
+      
+      - name: Verify Chromedriver Path
+        run: ls -la ./vendor/laravel/dusk/bin/
+
+      - name: Start ChromeDriver
+        run: nohup ./vendor/laravel/dusk/bin/chromedriver-linux --port=9515 > /dev/null 2>&1 &
+  
+      - name: Run Unit Tests (PHPUnit)
+        run: php artisan test
+
+      - name: Run Static Analysis (PHPStan)
+        run: ./vendor/bin/phpstan analyse --level=0 app
+
+      - name: Run PHP_CodeSniffer Fixer
+        run: ./vendor/bin/phpcbf --standard=PSR12 app
+        continue-on-error: true
+
+      - name: Run PHP_CodeSniffer
+        run: ./vendor/bin/phpcs --standard=PSR12 app
+
+      - name: Start Laravel Server
+        run: php artisan serve --host=127.0.0.1 --port=8000 > /dev/null 2>&1 &
+
+      - name: Update APP_URL for Laravel Dusk
+        run: sed -i 's|APP_URL=.*|APP_URL=http://127.0.0.1:8000|' .env
+
+      - name: Wait for Laravel Server to Start
+        run: sleep 5
+
+      - name: Debug Laravel Dusk Page Content
+        run: curl -s http://127.0.0.1:8000
+
+      - name: Run Laravel Dusk Tests
+        env:
+          APP_ENV: testing
+        run: php artisan dusk
+
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout Repository
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    # Checkout Repository
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      # Extract SSH Key
-      - name: Extract SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          tar -xvf key.tar.gz -C ~/.ssh
-          chmod 600 ~/.ssh/id_rsa
-          echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+    # Extract SSH Key
+    - name: Extract SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        tar -xvf key.tar.gz -C ~/.ssh
+        chmod 600 ~/.ssh/id_rsa
+        echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
 
-      # Install Dependencies
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y rsync
+    # Install Dependencies
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y rsync
 
-      # Deploy Code to VPS
-      - name: Deploy to VPS
-        env:
-          DEPLOY_PATH: /pso/stock-hub
-        run: |
-          rsync -avz --exclude '.git' --exclude 'key.tar.gz' ./ root@217.15.160.69:${{ env.DEPLOY_PATH }}
-          ssh root@217.15.160.69 "cd ${{ env.DEPLOY_PATH }} && composer install && php artisan migrate --force"
+    # Deploy Code to VPS
+    - name: Deploy to VPS
+      env:
+        DEPLOY_PATH: /pso/stock-hub
+      run: |
+        rsync -avz --exclude '.git' --exclude 'key.tar.gz' ./ root@217.15.160.69:${{ env.DEPLOY_PATH }}
 
-      # Reload Web Server
-      - name: Reload Web Server
-        run: |
-          ssh root@217.15.160.69 "systemctl reload nginx"
+    # Copy and Generate .env from .env.example
+    - name: Copy .env.example to .env on VPS
+      env:
+        DEPLOY_PATH: /pso/stock-hub
+      run: |
+        ssh root@217.15.160.69 "
+        cd ${DEPLOY_PATH} &&
+        cp .env.example .env
+        "
+
+    # Build and Run Docker Compose on VPS
+    - name: Run Docker Compose
+      run: |
+        ssh root@217.15.160.69 "
+          cd /pso/stock-hub &&
+          docker compose down &&
+          docker compose up -d --force-recreate
+        "
+
+    # Debug Nginx
+    - name: Debug Nginx
+      run: |
+        ssh root@217.15.160.69 "
+          systemctl status nginx.service;
+          nginx -t || echo 'Nginx configuration is invalid!';
+        "
+
+    # Reload or Restart Nginx
+    - name: Reload or Restart Nginx
+      run: |
+        ssh root@217.15.160.69 "
+          systemctl reload nginx || systemctl restart nginx;
+        "

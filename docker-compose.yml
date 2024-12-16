@@ -6,14 +6,14 @@ services:
     container_name: stockhub_nginx
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./public:/var/html/public
+      - ./public:/var/www/html
     depends_on:
       - app
     networks:
       - stockhub-network
     ports:
       - "8081:8081"
-
+      
   app:
     build:
       context: .
@@ -21,8 +21,9 @@ services:
     container_name: stockhub_app
     env_file:
       - .env
+    working_dir: /var/www/html
     volumes:
-      - .:/var/html
+      - .:/var/www/html
     ports:
       - "9000:9000"
     depends_on:
@@ -49,6 +50,8 @@ services:
     container_name: stockhub_phpmyadmin
     environment:
       PMA_HOST: db
+      PMA_USER: stockhubuser
+      PMA_PASSWORD: stockhubpassword
       MYSQL_ROOT_PASSWORD: rootpassword
     ports:
       - "8000:80"
@@ -62,4 +65,5 @@ volumes:
 
 networks:
   stockhub-network:
-
+    name : stockhub-network
+    driver: bridge

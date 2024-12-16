@@ -1,7 +1,8 @@
 @extends('layout')
 
 @section('content')
-<h1 class="my-4">Product List</h1>
+<h1 class="text-center">Stock Management</h1>
+<h2 class="my-4">Product List</h2>
 <a href="{{ route('products.create') }}" class="btn btn-primary mb-3">Add New Product</a>
 
 @if(session('success'))
