@@ -161,12 +161,21 @@ jobs:
             php artisan migrate --force || echo 'Migration failed!'
           "
 
-      - name: Debug Deployment
+       # Stop Existing Containers
+      - name: Stop Docker Containers
         run: |
           ssh root@217.15.160.69 "
-            docker compose down;
-            docker compose up -d;
-            "
+          cd /pso/stock-hub &&
+          docker-compose down || echo 'No containers were running'
+          "
+
+      # Start Docker Containers
+      - name: Start Docker Containers
+        run: |
+          ssh root@217.15.160.69 "
+          cd /pso/stock-hub &&
+          docker-compose up -d
+          "
 
       - name: Debug Nginx
         run: |
