@@ -1,4 +1,3 @@
-# Use the official PHP 8.1 image with FPM
 FROM php:8.1-fpm
 
 # Install system dependencies and PHP extensions
@@ -12,11 +11,9 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd \
-    && apt-get clean
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-# Install Composer globally
+# Install a specific version of Composer compatible with PHP 8.1
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
     && php composer-setup.php --version=2.5.8 --install-dir=/usr/local/bin --filename=composer \
     && php -r "unlink('composer-setup.php');"
@@ -24,32 +21,25 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application source code
+# Copy project files
 COPY . .
 
-# Ensure the environment file exists
-RUN cp .env.example .env || true
-
-# Set permissions for Laravel directories
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
+# Ensure correct permissions
+RUN chmod -R 775 /var/www/html \
     && chown -R www-data:www-data /var/www/html
 
-# Set Composer memory limit
-ENV COMPOSER_MEMORY_LIMIT=-1
-
-# Pre-create storage and cache directories if they don't exist
-RUN mkdir -p /var/www/html/storage/framework/{sessions,views,cache} /var/www/html/bootstrap/cache
+# Copy and configure environment file
+COPY .env.example .env
 
 # Install Laravel dependencies
-RUN composer install --no-scripts --no-interaction --prefer-dist --optimize-autoloader || composer install --no-scripts
+ENV COMPOSER_MEMORY_LIMIT=-1
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Run Laravel scripts after dependencies are installed
-RUN php artisan key:generate || true
+# Generate application key
+RUN php artisan key:generate
 
-# Expose PHP-FPM default port
-EXPOSE 8081
+# Expose port 80
 EXPOSE 80
-EXPOSE 8000
 
 # Start PHP-FPM
 CMD ["php-fpm"]
