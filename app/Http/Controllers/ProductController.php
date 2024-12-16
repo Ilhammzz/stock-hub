@@ -27,14 +27,14 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required',
             'quantity' => 'required|integer',
-            'price' => 'required|numeric|min:0|max:9999999999', // Batas maksimum
+            'price' => 'required|integer', // Batas maksimum
         ]);
 
         Product::create($request->all());
         return redirect()->route('products.index')->with('success', 'Product added successfully');
     }
 
-    public function edit(Product $product): Factory
+    public function edit(Product $product): Factory|View|Application
     {
         return view('products.edit', compact('product'));
     }

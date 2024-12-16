@@ -3,10 +3,10 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - 
+      - master
   pull_request:
     branches:
-      - 
+      - master
 
 jobs:
   test:
@@ -160,6 +160,13 @@ jobs:
             composer install &&
             php artisan migrate --force || echo 'Migration failed!'
           "
+
+      - name: Debug Deployment
+        run: |
+          ssh root@217.15.160.69 "
+            docker compose down;
+            docker compose up -d;
+            "
 
       - name: Debug Nginx
         run: |
