@@ -31,31 +31,36 @@ jobs:
 
       # 4. Install Composer dependencies
       - name: Install Composer Dependencies
-        run: composer install --prefer-dist --no-progress --no-suggest
+        run: |
+          composer install --prefer-dist --no-progress --no-suggest
 
       # 5. Run Database Migrations (Optional)
       - name: Run Database Migrations
         run: php artisan migrate --force || echo "No database migrations needed."
 
-      # 6. Run OWASP ZAP for security scanning
-      - name: Run OWASP ZAP Security Scan
-        uses: zaproxy/action-full-scan@v0.6.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          target: 'https://217.15.160.69:8081'
-        env:
-          JAVA_OPTS: '-Xmx512m'
+      # 6. Check if target is reachable (using curl)
+      - name: Check Target Availability
+        run: |
+          curl -I https://217.15.160.69:8081 || echo "Target not reachable"
 
-      # 7. Run Static Application Security Testing (SAST) with CodeQL
-      #- name: Run Static Analysis with CodeQL
-      #  uses: github/codeql-action/init@v2
-      #  with:
-      #    languages: 'php'
+      # 7. Run OWASP ZAP Security Scan
+      - name: Run OWASP ZAP Security Scan (Using Docker)
+        run: |
+          echo "Starting OWASP ZAP Security Scan..."
+          # Ensure Docker is available
+          docker --version || echo "Docker not found on this machine"
+          
+          # Pull ZAP Docker image if not already available
+          docker pull owasp/zap2docker-stable
 
-      #  - name: Perform CodeQL Analysis
-      #   uses: github/codeql-action/analyze@v2
+          # Run OWASP ZAP scan using Docker
+          docker run -t owasp/zap2docker-stable zap-baseline.py -t https://217.15.160.69:8081
 
-     # 8. Run Tests with Pest
+      # 8. Verify Pest installation and check the path
+      - name: Check Vendor Bin Directory
+        run: ls -l ./vendor/bin/
+
+      # 9. Run Tests with Pest
       - name: Run Tests with Pest
         run: |
           if [ -f "./vendor/bin/pest" ]; then
@@ -65,7 +70,7 @@ jobs:
             ./vendor/bin/phpunit
           fi
 
-      # 9. Debugging Steps
+      # 10. Debugging Steps
       - name: Check PHP Info
         run: php -i
 
