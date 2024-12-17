@@ -129,7 +129,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-   # needs: test
+    needs: test
 
     steps:
       # Checkout Repository
@@ -161,7 +161,7 @@ jobs:
             composer install &&
             php artisan migrate --force || echo 'Migration failed!'
           "
-
+          
       - name: Restart Docker Containers
         run: |
           ssh root@217.15.160.69 "
@@ -189,4 +189,11 @@ jobs:
             ssh root@217.15.160.69 "
               systemctl reload nginx || systemctl restart nginx;
             "
+      # Update Permissions for Laravel Directories
+      - name: Update Permissions
+        run: |
+          ssh root@217.15.160.69 "
+          sudo chown -R www-data:www-data /pso/stock-hub/storage /pso/stock-hub/bootstrap/cache &&
+          sudo chmod -R 775 /pso/stock-hub/storage /pso/stock-hub/bootstrap/cache
+          "
 
