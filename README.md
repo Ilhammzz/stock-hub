@@ -1,120 +1,169 @@
+<a name="readme-top"></a>
 
-# Stock Hub
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+  <h3 align="center">Stock Hub</h3>
 
-[![License](https://img.shields.io/github/license/irsyadkimi/stock-hub)](LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-Compatible-blue)](https://www.docker.com/)
+  <p align="center">
+    A stock management application deployed using GitHub Actions and Contabo VPS.
+    <br />
+    <a href="https://github.com/irsyadkimi/stock-hub"><strong>Explore the repo »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/irsyadkimi/stock-hub/issues/new?labels=bug&template=bug-report.md">Report Bug</a>
+    ·
+    <a href="https://github.com/irsyadkimi/stock-hub/issues/new?labels=enhancement&template=feature-request.md">Request Feature</a>
+  </p>
+</div>
 
-Stock Hub is a Dockerized Laravel application designed to provide a seamless environment for managing stock data with a clean and scalable infrastructure. This repository contains the DevOps setup, including Docker and Docker Compose configurations.
+<!-- Menu -->
+<details>
+  <summary>Menu</summary>
+  <ol>
+    <li><a href="#about-the-project">About The Project</a></li>
+    <li><a href="#built-with">Built With</a></li>
+    <li><a href="#setup-and-installation">Setup and Installation</a></li>
+    <li><a href="#ci-cd-pipeline-with-github-actions">CI/CD Pipeline with GitHub Actions</a></li>
+    <li><a href="#deployment-on-contabo-vps">Deployment on Contabo VPS</a></li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ol>
+</details>
 
-## Features
-- **Dockerized Laravel**: Efficient containerization using PHP 8.1 FPM and MySQL 5.7.
-- **Database Management**: Integrated phpMyAdmin for managing MySQL databases.
-- **Custom Networking**: Uses `stockhub-network` for isolated container communication.
-- **Port Exposure**: Exposes Laravel app on port `80` and phpMyAdmin on port `8080`.
-- **Volume Mounts**: Persistent data storage for MySQL and application files.
-- **Optimized for Development**: Includes Composer dependency management and proper file permissions for Laravel storage and cache.
+<!-- ABOUT THE PROJECT -->
+## About The Project
+Stock Hub is a stock management system designed for small to medium businesses. The application leverages modern tools like **GitHub Actions** for CI/CD automation and is deployed on a **Contabo VPS** to ensure reliability and scalability.
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## Prerequisites
-- [Docker](https://www.docker.com/) (version 20.10+)
-- [Docker Compose](https://docs.docker.com/compose/) (version 2.0+)
+### Built With
+- ![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
+- ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+- ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
+- ![Contabo](https://img.shields.io/badge/Contabo-0A192F?style=for-the-badge)
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## Installation
+## Setup and Installation
+To set up the project locally, follow these steps:
 
-1. **Clone the Repository**
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/irsyadkimi/stock-hub.git
    cd stock-hub
    ```
 
-2. **Set Up Environment Variables**
-   Copy the `.env.example` file to `.env` and configure it according to your requirements:
+2. **Copy environment variables:**
    ```bash
    cp .env.example .env
    ```
 
-3. **Start Containers**
-   Use Docker Compose to build and start the containers:
+3. **Build Docker containers:**
    ```bash
    docker-compose up -d --build
    ```
 
-4. **Install Laravel Dependencies**
-   Access the app container and install Composer dependencies:
+4. **Install dependencies:**
    ```bash
-   docker exec -it stockhub-app composer install
+   docker exec -it stockhub_app composer install
    ```
 
-5. **Run Laravel Migrations**
-   Set up the database structure:
+5. **Generate app key and run migrations:**
    ```bash
-   docker exec -it stockhub-app php artisan migrate
+   docker exec -it stockhub_app php artisan key:generate
+   docker exec -it stockhub_app php artisan migrate
    ```
 
-6. **Access the Application**
-   - Laravel App: [http://localhost](http://localhost)
-   - phpMyAdmin: [http://localhost:8080](http://localhost:8080)
+6. **Access the application:**
+   - Web: `http://localhost`
+   - phpMyAdmin: `http://localhost:8080`
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## Project Structure
-- **`app/`**: Laravel application files.
-- **`docker/`**: Docker configurations for the app and database.
-- **`docker-compose.yml`**: Docker Compose file for orchestrating the containers.
+## CI/CD Pipeline with GitHub Actions
+The CI/CD workflow automates testing, building, and deployment to Contabo VPS.
 
----
+1. **Workflow File**:
+   - Located in `.github/workflows/main.yml`.
 
-## Services
+2. **Pipeline Stages:**
+   - **Code Linting and Testing:** Ensures the application passes quality standards.
+   - **Build:** Docker images are built and pushed to a registry (e.g., Docker Hub).
+   - **Deployment:** Automatically deploys to Contabo VPS via SSH.
 
-| Service      | Description             | URL                   |
-|--------------|-------------------------|-----------------------|
-| Laravel App  | Main application        | [http://localhost](http://localhost) |
-| phpMyAdmin   | Database management UI  | [http://localhost:8080](http://localhost:8080) |
+3. **Secrets Configuration:**
+   Add the following secrets to your GitHub repository:
+   - `SSH_USER` - VPS SSH username
+   - `SSH_HOST` - Contabo server IP
+   - `SSH_KEY` - Private SSH key for authentication
+   - `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` - For pushing Docker images.
 
----
+Example Deployment Step:
+```yaml
+- name: Deploy to Contabo VPS
+  uses: appleboy/scp-action@v0.1.4
+  with:
+    host: ${{ secrets.SSH_HOST }}
+    username: ${{ secrets.SSH_USER }}
+    key: ${{ secrets.SSH_KEY }}
+    source: "docker-compose.yml"
+    target: "/var/www/stockhub"
+```
 
-## Development Commands
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-- **Rebuild Containers**
-  ```bash
-  docker-compose up -d --build
-  ```
+## Deployment on Contabo VPS
+1. **Initial Setup on VPS:**
+   - Install Docker and Docker Compose:
+     ```bash
+     sudo apt update && sudo apt install -y docker.io docker-compose
+     ```
 
-- **Stop Containers**
-  ```bash
-  docker-compose down
-  ```
+2. **Pull the latest changes from GitHub:**
+   ```bash
+   cd /var/www/stockhub
+   git pull origin main
+   ```
 
-- **Access App Container**
-  ```bash
-  docker exec -it stockhub-app bash
-  ```
+3. **Deploy the application:**
+   ```bash
+   docker-compose up -d --build
+   ```
 
-- **Check Logs**
-  ```bash
-  docker-compose logs -f
-  ```
+4. **Check logs:**
+   ```bash
+   docker-compose logs -f
+   ```
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+## Usage
+- **Application URL**: Visit the application via your server's IP or domain.
+- **Admin Dashboard**: (Setup guide coming soon)
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Contributing
-Contributions are welcome! Feel free to fork this repository, create a branch, and submit a pull request.
+Contributions are welcome! Follow these steps:
+1. Fork the project.
+2. Create your feature branch (`git checkout -b feature/YourFeature`).
+3. Commit your changes (`git commit -m 'Add YourFeature'`).
+4. Push to the branch (`git push origin feature/YourFeature`).
+5. Open a Pull Request.
 
-1. Fork the repository
-2. Create your feature branch: `git checkout -b feature/YourFeature`
-3. Commit your changes: `git commit -m 'Add YourFeature'`
-4. Push to the branch: `git push origin feature/YourFeature`
-5. Open a pull request
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
----
+## License
+Distributed under the MIT License.
 
-## Acknowledgments
-Special thanks to all contributors and the DevOps community for their support.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## Contact
+- **Author**: Irsyad Kimi
+- **Email**: irsyad@example.com
+- **Project Link**: [Stock Hub](https://github.com/irsyadkimi/stock-hub)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
