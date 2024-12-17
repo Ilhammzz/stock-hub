@@ -55,16 +55,27 @@ jobs:
       #  - name: Perform CodeQL Analysis
       #   uses: github/codeql-action/analyze@v2
 
-      # 8. Run Tests with Pest
+     # 8. Run Tests with Pest
       - name: Run Tests with Pest
-        run: ./vendor/bin/pest || echo "Pest tests failed"
+        run: |
+          if [ -f "./vendor/bin/pest" ]; then
+            ./vendor/bin/pest
+          else
+            echo "Pest binary not found, running with PHPUnit"
+            ./vendor/bin/phpunit
+          fi
 
       # 9. Debugging Steps
       - name: Check PHP Info
         run: php -i
 
       - name: Check Pest Version
-        run: ./vendor/bin/pest --version
+        run: |
+          if [ -f "./vendor/bin/pest" ]; then
+            ./vendor/bin/pest --version
+          else
+            echo "Pest not installed, running PHPUnit"
+          fi
 
       - name: Check Composer Version
         run: composer --version
